@@ -13,7 +13,7 @@ import { useVoice } from "@/hooks/useVoice";
 export default function Home() {
   const backend = useBackendHealth();
   const chat = useChat(backend);
-  const voice = useVoice((t) => chat.handleSend(t), chat.timersRef, chat.setInput);
+  const voice = useVoice((t) =>chat.handleSend(t), chat.timersRef, chat.setInput);
 
   const [showMatrix, setShowMatrix] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
@@ -21,7 +21,7 @@ export default function Home() {
 
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hasSearched = chat.messages.some((m) => m.role === "user");
+  const hasSearched = chat.messages.some((m) =>m.role === "user");
 
   const handleSendWrapper = (textOverride?: string) => {
     voice.setVoiceTranscript("");
@@ -42,17 +42,17 @@ export default function Home() {
     });
   }, [chat.messages, chat.isStreaming, chat.isThinking, chat.typingId]);
 
-  useEffect(() => { return () => { chat.timersRef.current.forEach((t) => clearTimeout(t)); }; }, [chat.timersRef]);
+  useEffect(() => { return () => { chat.timersRef.current.forEach((t) =>clearTimeout(t)); }; }, [chat.timersRef]);
 
   useEffect(() => {
     if (!chat.isStreaming && voice.isVoiceAnalyzing) {
-      const t = window.setTimeout(() => voice.setIsVoiceAnalyzing(false), 600);
-      return () => clearTimeout(t);
+      const t = window.setTimeout(() =>voice.setIsVoiceAnalyzing(false), 600);
+      return () =>clearTimeout(t);
     }
   }, [chat.isStreaming, voice.isVoiceAnalyzing, voice]);
 
-  const handleClarify = (opt: string) => handleSendWrapper(opt);
-  const handleQuickSend = (t: string) => handleSendWrapper(t);
+  const handleClarify = (opt: string) =>handleSendWrapper(opt);
+  const handleQuickSend = (t: string) =>handleSendWrapper(t);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#EEF2F7] text-[#2B2E36] selection:bg-[#FF3B00]/20 overflow-x-hidden overflow-y-visible relative">
@@ -69,14 +69,14 @@ export default function Home() {
           filter: "saturate(1.15) contrast(1.05)",
         }}
       />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#EEF2F7]/72 backdrop-blur-[0.5px]" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#EEF2F7]/72 backdrop-blur-[0.5px]"aria-hidden />
       <Header
         showHistory={showHistory}
         showAccount={showAccount}
         onToggleHistory={() => { setShowAccount(false); setShowHistory((v) => !v); }}
         onToggleAccount={() => { setShowHistory(false); setShowAccount((v) => !v); }}
-        onCloseHistory={() => setShowHistory(false)}
-        onCloseAccount={() => setShowAccount(false)}
+        onCloseHistory={() =>setShowHistory(false)}
+        onCloseAccount={() =>setShowAccount(false)}
         onSelectHistory={handleQuickSend}
       />
 
@@ -95,13 +95,13 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col min-h-0 relative pt-[56px]">
         {!hasSearched && !chat.isStreaming && !chat.isThinking && (
-          <HeroSection input={chat.input} isListening={voice.isListening} onInputChange={chat.setInput} onSend={() => handleSendWrapper()} onToggleListen={() => voice.toggleListen()} onQuickSend={handleQuickSend} />
+          <HeroSection input={chat.input} isListening={voice.isListening} onInputChange={chat.setInput} onSend={() =>handleSendWrapper()} onToggleListen={() =>voice.toggleListen()} onQuickSend={handleQuickSend} />
         )}
         {(hasSearched || chat.isStreaming || chat.isThinking) && (
-          <MessageList messages={chat.messages} typingId={chat.typingId} isThinking={chat.isThinking} isStreaming={chat.isStreaming} showMatrix={showMatrix} backendOk={backend.backendOk} lastTrace={backend.lastTrace} lastCacheHit={backend.lastCacheHit} onToggleMatrix={() => setShowMatrix(!showMatrix)} onClarify={handleClarify} listRef={listRef} bottomRef={bottomRef} />
+          <MessageList messages={chat.messages} typingId={chat.typingId} isThinking={chat.isThinking} isStreaming={chat.isStreaming} showMatrix={showMatrix} backendOk={backend.backendOk} lastTrace={backend.lastTrace} lastCacheHit={backend.lastCacheHit} onToggleMatrix={() =>setShowMatrix(!showMatrix)} onClarify={handleClarify} listRef={listRef} bottomRef={bottomRef} />
         )}
         {(hasSearched || chat.isStreaming || chat.isThinking) && (
-          <ChatInput input={chat.input} isListening={voice.isListening} isPolishing={voice.isPolishing} isVoiceAnalyzing={voice.isVoiceAnalyzing} isThinking={chat.isThinking} isStreaming={chat.isStreaming} typingId={chat.typingId} onInputChange={chat.setInput} onSend={() => handleSendWrapper()} onToggleListen={() => voice.toggleListen()} />
+          <ChatInput input={chat.input} isListening={voice.isListening} isPolishing={voice.isPolishing} isVoiceAnalyzing={voice.isVoiceAnalyzing} isThinking={chat.isThinking} isStreaming={chat.isStreaming} typingId={chat.typingId} onInputChange={chat.setInput} onSend={() =>handleSendWrapper()} onToggleListen={() =>voice.toggleListen()} />
         )}
       </main>
 

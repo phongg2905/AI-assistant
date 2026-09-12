@@ -11,7 +11,7 @@ export function useApiHealth() {
     };
     check();
     const id = window.setInterval(check, 30000);
-    return () => window.clearInterval(id);
+    return () =>window.clearInterval(id);
   }, []);
   return { backendOk, setBackendOk, lastTrace, setLastTrace, lastCacheHit, setLastCacheHit };
 }

@@ -127,7 +127,7 @@ export function Logo({ size = 32, animated = true, className = "" }: LogoProps) 
         return { x2, y2, dotSize, alpha, r, g, b, depth };
       });
 
-      projected.sort((a, b) => a.depth - b.depth);
+      projected.sort((a, b) =>a.depth - b.depth);
       for (const p of projected) {
         ctx.beginPath();
         ctx.fillStyle = `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},${p.alpha})`;
@@ -149,7 +149,7 @@ export function Logo({ size = 32, animated = true, className = "" }: LogoProps) 
     if (animated) raf = requestAnimationFrame(loop);
     else render(performance.now());
 
-    return () => cancelAnimationFrame(raf);
+    return () =>cancelAnimationFrame(raf);
   }, [size, animated]);
 
   return (

@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 
 export function useVoice(
-  onTranscript: (text: string) => void,
+  onTranscript: (text: string) =>void,
   timersRef: React.MutableRefObject<number[]>,
-  setInput: (v: string) => void,
+  setInput: (v: string) =>void,
 ) {
   const [isListening, setIsListening] = useState(false);
   const [isVoiceAnalyzing, setIsVoiceAnalyzing] = useState(false);
@@ -49,7 +49,7 @@ export function useVoice(
           levels.push(Math.min(1, 0.18 + avg * 0.88));
         }
         rms = Math.sqrt(rms / bands);
-        const boosted = levels.map((l) => Math.min(1, l * (0.75 + rms * 0.85)));
+        const boosted = levels.map((l) =>Math.min(1, l * (0.75 + rms * 0.85)));
         setWaveLevels(boosted);
         raf = requestAnimationFrame(tick);
       };
@@ -58,24 +58,24 @@ export function useVoice(
     }
     if (isListening) {
       const id = window.setInterval(() => { setWaveLevels(Array.from({ length: 7 }, () => 0.25 + Math.random() * 0.55)); }, 120);
-      return () => clearInterval(id);
+      return () =>clearInterval(id);
     }
-    const id = window.setInterval(() => { setWaveLevels((prev) => prev.map((_, i) => 0.35 + Math.abs(Math.sin(Date.now() / 380 + i)) * 0.55)); }, 120);
-    return () => clearInterval(id);
+    const id = window.setInterval(() => { setWaveLevels((prev) =>prev.map((_, i) => 0.35 + Math.abs(Math.sin(Date.now() / 380 + i)) * 0.55)); }, 120);
+    return () =>clearInterval(id);
   }, [isListening, isVoiceAnalyzing, isPolishing]);
 
   const startVoiceAnalyzingFlow = (transcript: string) => {
     setVoiceTranscript(transcript);
     setIsListening(false);
     setIsVoiceAnalyzing(true);
-    const t = window.setTimeout(() => onTranscript(transcript), 900);
+    const t = window.setTimeout(() =>onTranscript(transcript), 900);
     timersRef.current.push(t);
   };
 
   const cancelVoice = () => {
     try { recognitionRef.current?.stop(); } catch {}
     try { mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop(); } catch {}
-    try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {}
+    try { streamRef.current?.getTracks().forEach((t) =>t.stop()); } catch {}
     try { audioContextRef.current?.close(); } catch {}
     audioContextRef.current = null;
     analyserRef.current = null;
@@ -90,7 +90,7 @@ export function useVoice(
     if (isListeningRef.current) {
       try { recognitionRef.current?.stop(); } catch {}
       try { mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop(); } catch {}
-      try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {}
+      try { streamRef.current?.getTracks().forEach((t) =>t.stop()); } catch {}
       try { audioContextRef.current?.close(); } catch {}
       audioContextRef.current = null;
       analyserRef.current = null;
@@ -124,11 +124,11 @@ export function useVoice(
         const blob = new Blob(audioChunksRef.current, { type: mime });
         const webText = (transcriptRef.current || voiceTranscript || "").trim();
         try { if (blob.size > 0) { const url = URL.createObjectURL(blob); setDebugAudioUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; }); setDebugBlobSize(blob.size); } } catch {}
-        const stopTracks = () => { try { stream.getTracks().forEach((t) => t.stop()); } catch {} try { audioContextRef.current?.close(); } catch {} audioContextRef.current = null; analyserRef.current = null; };
+        const stopTracks = () => { try { stream.getTracks().forEach((t) =>t.stop()); } catch {} try { audioContextRef.current?.close(); } catch {} audioContextRef.current = null; analyserRef.current = null; };
         if (blob.size < 1000) {
           setIsListening(false); setIsPolishing(false); isListeningRef.current = false;
           if (webText && wasListening) startVoiceAnalyzingFlow(webText);
-          else if (!webText && wasListening) { setVoiceTranscript("Không nghe rõ, vui lòng thử lại hoặc gõ..."); window.setTimeout(() => setVoiceTranscript(""), 2500); }
+          else if (!webText && wasListening) { setVoiceTranscript("Không nghe rõ, vui lòng thử lại hoặc gõ..."); window.setTimeout(() =>setVoiceTranscript(""), 2500); }
           stopTracks(); return;
         }
         setIsListening(false); isListeningRef.current = false; setIsPolishing(true); if (webText) setVoiceTranscript(webText);
@@ -136,7 +136,7 @@ export function useVoice(
         let backendText: string | null = null; let rawWhisper: string | null = null; let polished = false;
         try {
           const fd = new FormData(); fd.append("audio", blob, `voice-${Date.now()}.webm`); if (webText) fd.append("webSpeechText", webText);
-          const ctrl = new AbortController(); const to = window.setTimeout(() => ctrl.abort(), 6500);
+          const ctrl = new AbortController(); const to = window.setTimeout(() =>ctrl.abort(), 6500);
           const res = await fetch(`${API}/voice/transcribe`, { method: "POST", body: fd, signal: ctrl.signal as any });
           window.clearTimeout(to);
           if (res.ok) { const data = await res.json(); if (data.text) { backendText = data.text; rawWhisper = data.rawWhisper || null; polished = !!data.polished; } }
@@ -148,7 +148,7 @@ export function useVoice(
             setVoiceTranscript(backendText); setPolishedDiff(true);
             window.setTimeout(() => { setIsPolishing(false); startVoiceAnalyzingFlow(final); }, 650);
           } else { setVoiceTranscript(final); setIsPolishing(false); startVoiceAnalyzingFlow(final); }
-        } else if (wasListening) { setIsPolishing(false); setVoiceTranscript("Không nghe rõ, vui lòng thử lại hoặc gõ..."); window.setTimeout(() => setVoiceTranscript(""), 2500); } else setIsPolishing(false);
+        } else if (wasListening) { setIsPolishing(false); setVoiceTranscript("Không nghe rõ, vui lòng thử lại hoặc gõ..."); window.setTimeout(() =>setVoiceTranscript(""), 2500); } else setIsPolishing(false);
       };
       mr.start(200); mediaOk = true;
     } catch (e) { console.warn("MediaRecorder not available", e); }

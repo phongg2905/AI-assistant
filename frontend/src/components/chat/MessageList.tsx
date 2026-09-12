@@ -13,8 +13,8 @@ type Props = {
   backendOk: boolean | null;
   lastTrace: string | null;
   lastCacheHit: boolean | null;
-  onToggleMatrix: () => void;
-  onClarify: (opt: string) => void;
+  onToggleMatrix: () =>void;
+  onClarify: (opt: string) =>void;
   listRef: React.RefObject<HTMLDivElement | null>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
 };
@@ -30,7 +30,7 @@ export function MessageList({ messages, typingId, isThinking, isStreaming, showM
         {isThinking && <ThinkingIndicator />}
         {isStreaming && !isThinking && !typingId && <StreamingIndicator />}
       </div>
-      <div ref={bottomRef} className="h-1 shrink-0" aria-hidden />
+      <div ref={bottomRef} className="h-1 shrink-0"aria-hidden />
     </div>
   );
 }

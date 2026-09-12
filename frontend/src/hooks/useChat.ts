@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import type { ChatMessage, Product } from "@/lib/domain.types";
 import { buildFallbackSummary, getFallbackProducts } from "@/lib/fallbackRecommendation";
 export function useChat(
-  backendControls: { setBackendOk: (v: boolean) => void; setLastTrace: (v: string | null) => void; setLastCacheHit: (v: boolean | null) => void },
+  backendControls: { setBackendOk: (v: boolean) =>void; setLastTrace: (v: string | null) =>void; setLastCacheHit: (v: boolean | null) =>void },
 ) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -89,7 +89,7 @@ export function useChat(
         idx++;
         const char = finalText[idx - 1] || "";
         const isPauseChar = char === "·" || char === ":" || char === "—" || char === "\n";
-        setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, text: finalText.slice(0, idx) } : msg)));
+        setMessages((prev) =>prev.map((msg) => (msg.id === assistantId ? { ...msg, text: finalText.slice(0, idx) } : msg)));
         if (idx < finalText.length) {
           let delay = 18 + Math.random() * 18;
           if (isPauseChar) delay = 160 + Math.random() * 120;
@@ -99,11 +99,11 @@ export function useChat(
         } else {
           const c1 = window.setTimeout(() => {
             if (clarification)
-              setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, clarification } : msg)));
+              setMessages((prev) =>prev.map((msg) => (msg.id === assistantId ? { ...msg, clarification } : msg)));
           }, 420);
           timersRef.current.push(c1);
           const c2 = window.setTimeout(() => {
-            setMessages((prev) => prev.map((msg) => (msg.id === assistantId ? { ...msg, products, matrix: true } : msg)));
+            setMessages((prev) =>prev.map((msg) => (msg.id === assistantId ? { ...msg, products, matrix: true } : msg)));
             setTypingId(null);
             setIsStreaming(false);
           }, 900);

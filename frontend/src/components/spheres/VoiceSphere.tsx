@@ -42,7 +42,7 @@ export function VoiceSphere({ mode, levels }: { mode: "listening" | "analyzing";
       const t = (now - t0) * 0.001;
       const dt = lastT ? Math.min(0.032, (now - lastT) * 0.001) : 0.016;
       lastT = now;
-      const rawAvg = levelsRef.current.reduce((a, b) => a + b, 0) / Math.max(1, levelsRef.current.length);
+      const rawAvg = levelsRef.current.reduce((a, b) =>a + b, 0) / Math.max(1, levelsRef.current.length);
       // mượt hóa avg để không giật cục
       smoothAvg += (rawAvg - smoothAvg) * 0.09;
       const isListening = mode === "listening";
@@ -114,7 +114,7 @@ export function VoiceSphere({ mode, levels }: { mode: "listening" | "analyzing";
         }
         return { x2, y2, size, alpha, r, g, b, depth };
       });
-      projected.sort((a, b) => a.depth - b.depth);
+      projected.sort((a, b) =>a.depth - b.depth);
       for (const p of projected) {
         ctx.beginPath();
         ctx.fillStyle = `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},${p.alpha})`;
@@ -137,9 +137,9 @@ export function VoiceSphere({ mode, levels }: { mode: "listening" | "analyzing";
       raf = requestAnimationFrame(render);
     };
     raf = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(raf);
+    return () =>cancelAnimationFrame(raf);
   }, [mode]);
-  return <canvas ref={canvasRef} className="block select-none" style={{ width: 340, height: 340, filter: "contrast(1.08) saturate(1.14)" }} />;
+  return <canvas ref={canvasRef} className="block select-none"style={{ width: 340, height: 340, filter: "contrast(1.08) saturate(1.14)" }} />;
 }
 // alias để tương thích tên cũ trước khi đổi
 export { VoiceSphere as ParticleSphere };

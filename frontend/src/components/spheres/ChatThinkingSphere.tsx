@@ -60,7 +60,7 @@ export function ChatThinkingSphere() {
         if (depth > 0.75) { const h = (depth - 0.75) / 0.25; r = r + (255 - r) * h * 0.28; g = g + (255 - g) * h * 0.28; b = b + (255 - b) * h * 0.28; }
         return { x2, y2, size, alpha, r, g, b, depth };
       });
-      projected.sort((a, b) => a.depth - b.depth);
+      projected.sort((a, b) =>a.depth - b.depth);
       for (const p of projected) {
         ctx.beginPath();
         ctx.fillStyle = `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},${p.alpha})`;
@@ -72,8 +72,8 @@ export function ChatThinkingSphere() {
       raf = requestAnimationFrame(render);
     };
     raf = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(raf);
+    return () =>cancelAnimationFrame(raf);
   }, []);
-  return <canvas ref={canvasRef} className="block select-none" style={{ width: 56, height: 56, filter: "contrast(1.06) saturate(1.08)" }} />;
+  return <canvas ref={canvasRef} className="block select-none"style={{ width: 56, height: 56, filter: "contrast(1.06) saturate(1.08)" }} />;
 }
 export { ChatThinkingSphere as ThinkingSphere };

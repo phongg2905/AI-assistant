@@ -29,6 +29,38 @@
   background: transparent;
 }
 
+/* History popup – Liquid Glass / Neumorphism scrollbar – ép hiện rõ */
+.history-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #A8B6D1 #EEF2F7;
+  scrollbar-gutter: stable;
+}
+.history-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.history-scroll::-webkit-scrollbar-track {
+  background: rgba(238, 242, 247, 0.9);
+  border-radius: 999px;
+  margin: 6px 2px 6px 0;
+  box-shadow: inset 1px 1px 3px #D3DCE8;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+.history-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8EDF5 45%, #D8E1F0 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  box-shadow: 2px 2px 7px #B8C6DE, -1px -1px 3px #FFFFFF, inset 0 1px 1px rgba(255, 255, 255, 1);
+  min-height: 32px;
+}
+.history-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #EEF2F7 50%, #D2DAE8 100%);
+  box-shadow: 3px 3px 9px #A8B6D1, -1px -1px 3px #FFFFFF;
+}
+.history-scroll::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #E6E9EF 0%, #CBD5E6 100%);
+  box-shadow: inset 1px 1px 4px #A8B6D1;
+}
+
 body {
   background: transparent;
   color: #1A1D24;

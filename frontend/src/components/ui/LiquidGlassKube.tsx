@@ -3,12 +3,12 @@
 import { useId, useEffect, useRef, useState, useCallback } from "react";
 
 // ── Surface functions (kube.io) ─────────────────────────────────
-const smootherstep = (x: number) => x * x * x * (x * (x * 6 - 15) + 10);
-const mix = (a: number, b: number, t: number) => a * (1 - t) + b * t;
+const smootherstep = (x: number) =>x * x * x * (x * (x * 6 - 15) + 10);
+const mix = (a: number, b: number, t: number) =>a * (1 - t) + b * t;
 
-const convexCircle = (x: number) => Math.sqrt(Math.max(0, 1 - (1 - x) * (1 - x)));
-const convexSquircle = (x: number) => Math.pow(Math.max(0, 1 - Math.pow(1 - x, 4)), 0.25);
-const concaveFrom = (x: number, convexFn: (v: number) => number) => 1 - convexFn(x);
+const convexCircle = (x: number) =>Math.sqrt(Math.max(0, 1 - (1 - x) * (1 - x)));
+const convexSquircle = (x: number) =>Math.pow(Math.max(0, 1 - Math.pow(1 - x, 4)), 0.25);
+const concaveFrom = (x: number, convexFn: (v: number) =>number) => 1 - convexFn(x);
 const lipFn = (x: number) => {
   const c = convexSquircle(x);
   const cc = concaveFrom(x, convexSquircle);
@@ -17,10 +17,10 @@ const lipFn = (x: number) => {
 
 type SurfaceType = "convexCircle" | "convexSquircle" | "concave" | "lip";
 
-const SURFACE_FNS: Record<SurfaceType, (x: number) => number> = {
+const SURFACE_FNS: Record<SurfaceType, (x: number) =>number> = {
   convexCircle,
   convexSquircle,
-  concave: (x) => concaveFrom(x, convexSquircle),
+  concave: (x) =>concaveFrom(x, convexSquircle),
   lip: lipFn,
 };
 
@@ -87,7 +87,7 @@ function precalculateDisplacements(opts: {
     raws.push(disp);
   }
   const max = Math.max(...raws, 0.0001);
-  const normalized = raws.map((v) => v / max);
+  const normalized = raws.map((v) =>v / max);
   return { samples: normalized, max };
 }
 
@@ -148,10 +148,18 @@ export function KubeLiquidGlass({
   saturation,
   withHighlight,
 }: KubeLiquidGlassProps) {
+  // STRONGER defaults for iOS 26 – increase refraction
+  const _defaultBezel = 18;
+  const _defaultThick = 14;
+  const _defaultScale = 1.45;
+  const _defaultRefract = 1.8;
   // map legacy props
-  const bezelWidth = bezelWidthProp ?? (displacementScale ? Math.max(8, Math.min(24, displacementScale)) : 14);
-  const thickness = thicknessProp ?? (displacementScale ? Math.max(6, displacementScale * 0.55) : 10);
-  const saturate = saturation ?? 1.15;
+  const bezelWidth = bezelWidthProp ?? (displacementScale ? Math.max(12, Math.min(28, displacementScale * 1.15)) : _defaultBezel);
+  const thickness = thicknessProp ?? (displacementScale ? Math.max(10, displacementScale * 0.85) : _defaultThick);
+  const saturate = saturation ?? 1.18;
+  const effScaleRatio = (scaleRatio ?? 1) * (_defaultScale / 1);
+  const effRefractive = refractiveIndex === 1.5 ? _defaultRefract : refractiveIndex;
+  const effSpecular = specularOpacity === 0.42 ? 0.55 : specularOpacity;
   const autoId = useId().replace(/:/g, "");
   const filterId = `kube-liquid-${autoId}`;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,15 +184,24 @@ export function KubeLiquidGlass({
       const { samples, max } = precalculateDisplacements({
         bezelWidth,
         thickness,
-        refractiveIndex,
+        refractiveIndex: effRefractive,
         surface,
       });
-      const maxDisp = max * scaleRatio;
+      // keep raw max – scale applied via animated feDisplacementMap scale, not map regen
+      const maxDisp = max;
 
+      // perf: render map at 0.62x to cut pixels ~60% – stretched via feImage 100%
+      const RES = 0.62;
+      const cw = Math.max(1, Math.round(W * RES));
+      const ch = Math.max(1, Math.round(H * RES));
+      const canvasW = cw;
+      const canvasH = ch;
+      const scaledR = R * RES;
+      const scaledBezel = bezelWidth * RES;
       // canvas for displacement map
       const c = document.createElement("canvas");
-      c.width = Math.max(1, Math.round(W));
-      c.height = Math.max(1, Math.round(H));
+      c.width = canvasW;
+      c.height = canvasH;
       const ctx = c.getContext("2d");
       if (!ctx) return { dispUrl: null, specularUrl: null, maxDisp };
       const img = ctx.createImageData(c.width, c.height);
@@ -210,7 +227,7 @@ export function KubeLiquidGlass({
       for (let y = 0; y < c.height; y++) {
         for (let x = 0; x < c.width; x++) {
           const idx = (y * c.width + x) * 4;
-          const sdf = sdRoundedRect(x + 0.5, y + 0.5, W, H, R);
+          const sdf = sdRoundedRect(x + 0.5, y + 0.5, cw, ch, scaledR);
           const inside = sdf < 0;
           if (!inside) {
             img.data[idx] = 128;
@@ -226,7 +243,7 @@ export function KubeLiquidGlass({
             continue;
           }
           const distToEdge = -sdf;
-          if (distToEdge > bezelWidth) {
+          if (distToEdge > scaledBezel) {
             // flat interior – no displacement, no specular
             img.data[idx] = 128;
             img.data[idx + 1] = 128;
@@ -240,15 +257,15 @@ export function KubeLiquidGlass({
             }
             continue;
           }
-          const normDist = distToEdge / bezelWidth; // 0 at edge, 1 at inner
+          const normDist = distToEdge / scaledBezel; // 0 at edge, 1 at inner
           const magNorm = sampleMag(normDist);
 
           // gradient for direction (inward)
           const eps = 1;
-          const sdfL = sdRoundedRect(x - eps + 0.5, y + 0.5, W, H, R);
-          const sdfR = sdRoundedRect(x + eps + 0.5, y + 0.5, W, H, R);
-          const sdfT = sdRoundedRect(x + 0.5, y - eps + 0.5, W, H, R);
-          const sdfB = sdRoundedRect(x + 0.5, y + eps + 0.5, W, H, R);
+          const sdfL = sdRoundedRect(x - eps + 0.5, y + 0.5, cw, ch, scaledR);
+          const sdfR = sdRoundedRect(x + eps + 0.5, y + 0.5, cw, ch, scaledR);
+          const sdfT = sdRoundedRect(x + 0.5, y - eps + 0.5, cw, ch, scaledR);
+          const sdfB = sdRoundedRect(x + 0.5, y + eps + 0.5, cw, ch, scaledR);
           const gx = (sdfR - sdfL) / (2 * eps);
           const gy = (sdfB - sdfT) / (2 * eps);
           const glen = Math.hypot(gx, gy) || 1;
@@ -271,7 +288,7 @@ export function KubeLiquidGlass({
             const rim = Math.pow(Math.max(0, dot), 2.2);
             // falloff from edge
             const edgeFalloff = 1 - normDist; // 1 at edge
-            const intensity = rim * edgeFalloff * specularOpacity;
+            const intensity = rim * edgeFalloff * effSpecular;
             const a = Math.round(Math.max(0, Math.min(1, intensity)) * 255);
             // slight warm white
             sImg.data[idx] = 255;
@@ -289,30 +306,57 @@ export function KubeLiquidGlass({
       }
       return { dispUrl: c.toDataURL("image/png"), specularUrl, maxDisp };
     },
-    [radius, bezelWidth, thickness, refractiveIndex, surface, scaleRatio, specularAngle, specularOpacity]
+    [radius, bezelWidth, thickness, effRefractive, surface, specularAngle, effSpecular]
   );
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf: number | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     const ro = new ResizeObserver((entries) => {
-      for (const e of entries) {
-        const w = Math.round(e.contentRect.width);
-        const h = Math.round(e.contentRect.height);
-        if (w > 0 && h > 0) setSize({ w, h });
-      }
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        for (const e of entries) {
+          const w = Math.round(e.contentRect.width);
+          const h = Math.round(e.contentRect.height);
+          if (w > 0 && h > 0) {
+            if (raf) cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => setSize({ w, h }));
+          }
+        }
+      }, 80);
     });
     ro.observe(el);
     // initial
     const rect = el.getBoundingClientRect();
     if (rect.width && rect.height) setSize({ w: Math.round(rect.width), h: Math.round(rect.height) });
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      if (timeout) clearTimeout(timeout);
+    };
   }, []);
 
   useEffect(() => {
     if (!size) return;
-    const { dispUrl, specularUrl, maxDisp } = generateMaps(size.w, size.h);
-    setMaps({ dispUrl, specularUrl, maxDisp });
+    // respect reduced motion – use blur only
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setMaps({ dispUrl: null, specularUrl: null, maxDisp: 0 });
+      return;
+    }
+    const run = () => {
+      const { dispUrl, specularUrl, maxDisp } = generateMaps(size.w, size.h);
+      setMaps({ dispUrl, specularUrl, maxDisp });
+    };
+    const w = window as any;
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(run, { timeout: 120 });
+      return () => w.cancelIdleCallback && w.cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(run, 16);
+      return () => clearTimeout(id);
+    }
   }, [size, generateMaps]);
 
   // Fix hydration mismatch: server always renders fallback (isChrome=false).
@@ -322,8 +366,34 @@ export function KubeLiquidGlass({
     setIsChrome(typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent));
   }, []);
 
+  // smooth scale animation – avoids map regen flicker on press
+  const targetScale = maps.maxDisp * effScaleRatio;
+  const [animatedScale, setAnimatedScale] = useState(targetScale);
+  useEffect(() => {
+    // if map not ready, keep 0
+    if (!maps.maxDisp) return;
+    const start = animatedScale;
+    const diff = targetScale - start;
+    if (Math.abs(diff) < 0.08) {
+      if (animatedScale !== targetScale) setAnimatedScale(targetScale);
+      return;
+    }
+    let raf: number;
+    const t0 = performance.now();
+    const duration = 420;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setAnimatedScale(start + diff * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetScale]);
+
   return (
-    <div ref={containerRef} className={`relative isolate ${className}`} style={{ borderRadius: r, contain: "layout paint style" as any, ...style }}>
+    <div ref={containerRef} className={`relative isolate ${className}`} style={{ borderRadius: r, contain: "layout paint style"as any, ...style }}>
       {/* SVG filter – only Chrome supports backdrop-filter:url(#id) */}
       <svg width={0} height={0} aria-hidden style={{ position: "absolute", pointerEvents: "none", opacity: 0 }}>
         <defs>
@@ -338,25 +408,26 @@ export function KubeLiquidGlass({
           >
             {maps.dispUrl && (
               <>
-                <feImage href={maps.dispUrl} x={0} y={0} width="100%" height="100%" preserveAspectRatio="none" result="dispMap" />
-                {/* chromatic split: if enabled, could do 3 maps, here single */}
+                <feImage href={maps.dispUrl} x={0} y={0} width="100%"height="100%"preserveAspectRatio="none"result="dispMap" />
+                {/* soften map to avoid text shimmer – keeps strong bend but blurs high-freq text edges */}
+                <feGaussianBlur in="dispMap" stdDeviation="0.65" result="softDisp" />
                 <feDisplacementMap
                   in="SourceGraphic"
-                  in2="dispMap"
-                  scale={maps.maxDisp}
+                  in2="softDisp"
+                  scale={animatedScale}
                   xChannelSelector="R"
                   yChannelSelector="G"
                   result="refracted"
                 />
                 {maps.specularUrl && (
                   <>
-                    <feImage href={maps.specularUrl} x={0} y={0} width="100%" height="100%" preserveAspectRatio="none" result="specMap" />
-                    <feColorMatrix in="specMap" type="matrix" values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${specularOpacity} 0`} result="specAlpha" />
-                    <feBlend in="refracted" in2="specAlpha" mode="screen" result="withSpecular" />
-                    <feGaussianBlur in="withSpecular" stdDeviation={blur} result="final" />
+                    <feImage href={maps.specularUrl} x={0} y={0} width="100%"height="100%"preserveAspectRatio="none"result="specMap" />
+                    <feColorMatrix in="specMap"type="matrix"values={`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${effSpecular} 0`} result="specAlpha" />
+                    <feBlend in="refracted"in2="specAlpha"mode="screen"result="withSpecular" />
+                    <feGaussianBlur in="withSpecular"stdDeviation={blur} result="final" />
                   </>
                 )}
-                {!maps.specularUrl && <feGaussianBlur in="refracted" stdDeviation={blur} result="final" />}
+                {!maps.specularUrl && <feGaussianBlur in="refracted"stdDeviation={blur} result="final" />}
               </>
             )}
           </filter>
@@ -375,10 +446,12 @@ export function KubeLiquidGlass({
           border: "1px solid rgba(255,255,255,0.48)",
           willChange: "backdrop-filter, transform",
           transform: "translateZ(0)",
+          backfaceVisibility: "hidden" as any,
+          WebkitBackfaceVisibility: "hidden" as any,
         }}
       >
         {/* fallback subtle top highlight for non-Chrome */}
-        {!isChrome && <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" style={{ borderRadius: r }} />}
+        {!isChrome && <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60"style={{ borderRadius: r }} />}
         <div className="relative z-10 w-full h-full">{children}</div>
       </div>
 

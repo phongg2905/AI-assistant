@@ -11,8 +11,8 @@ type Props = {
   waveLevels: number[];
   debugAudioUrl: string | null;
   debugBlobSize: number | null;
-  onCancel: () => void;
-  onStop: () => void;
+  onCancel: () =>void;
+  onStop: () =>void;
 };
 
 export function VoiceOverlay({ isListening, isPolishing, isVoiceAnalyzing, voiceTranscript, polishedDiff, waveLevels, debugAudioUrl, debugBlobSize, onCancel, onStop }: Props) {
@@ -20,10 +20,10 @@ export function VoiceOverlay({ isListening, isPolishing, isVoiceAnalyzing, voice
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050507]/85 backdrop-blur-xl px-6">
       <button onClick={onCancel} className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] flex items-center justify-center text-[#9A9A9A] hover:text-white transition-colors">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        <svg width="16"height="16"viewBox="0 0 24 24"fill="none"stroke="currentColor"strokeWidth="1.8"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
       <div className="flex flex-col items-center w-full max-w-[560px]">
-        <div className="relative flex items-center justify-center" style={{ width: 360, height: 360 }}>
+        <div className="relative flex items-center justify-center"style={{ width: 360, height: 360 }}>
           <div className={`absolute rounded-full border ${isListening ? "border-[#38BDF8]/18" : isPolishing ? "border-[#F59E0B]/18" : "border-[#7C3AED]/18"} ${isListening ? "siri-ping" : "siri-ping-slow"}`} style={{ width: 285, height: 285 }} />
           <div className={`absolute rounded-full border ${isListening ? "border-[#3B82F6]/12" : isPolishing ? "border-[#F59E0B]/12" : "border-[#A855F7]/12"} ${isListening ? "siri-ping-delayed" : "siri-ping-slow-delayed"}`} style={{ width: 365, height: 365 }} />
           <ParticleSphere mode={isListening ? "listening" : "analyzing"} levels={waveLevels} />
@@ -36,7 +36,7 @@ export function VoiceOverlay({ isListening, isPolishing, isVoiceAnalyzing, voice
         <div className="mt-6 text-center">
           <div className="text-[15px] font-medium tracking-tight text-white">{isListening ? "Đang lắng nghe..." : isPolishing ? "Đang chuẩn hóa với Whisper..." : "Đang tìm kiếm và phân tích..."}</div>
           {voiceTranscript && (
-            <div className={`mt-4 px-4 py-3 rounded-2xl bg-[#141414] border text-[13px] leading-relaxed max-w-[520px] mx-auto transition-all ${polishedDiff ? "border-[#F59E0B]/40 bg-[#1A1505] text-[#FDE68A]" : "border-[#1E1E1E] text-[#EDEDED]"}`}>
+            <div className={`mt-4 px-4 py-3 rounded-2xl border text-[13px] leading-relaxed max-w-[520px] mx-auto ${polishedDiff ? "bg-[#1A1505] border-[#F59E0B]/40 text-[#FDE68A]" : "bg-[#141414] border-[#1E1E1E] text-[#EDEDED]"}`}>
               “{voiceTranscript}”
               {polishedDiff && <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-sans font-medium text-[#F59E0B]">Whisper đã chuẩn hóa</span>}
             </div>

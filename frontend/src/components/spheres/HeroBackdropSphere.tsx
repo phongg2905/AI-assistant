@@ -65,9 +65,9 @@ export function HeroBackdropSphere() {
         if (depth > 0.75) { const h = (depth - 0.75) / 0.25; r = r + (255 - r) * h * 0.28; g = g + (255 - g) * h * 0.28; b = b + (255 - b) * h * 0.28; }
         return { x2, y2, size, alpha, r, g, b, depth };
       });
-      projected.sort((a, b) => a.depth - b.depth);
+      projected.sort((a, b) =>a.depth - b.depth);
       for (const p of projected) {
-        if (p.x2 < -30 || p.x2 > W + 30 || p.y2 < -30 || p.y2 > H + 30) continue;
+        if (p.x2 < -30 || p.x2 >W + 30 || p.y2 < -30 || p.y2 >H + 30) continue;
         ctx.beginPath();
         ctx.fillStyle = `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},${p.alpha})`;
         if (p.depth > 0.78) { ctx.shadowColor = `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},0.32)`; ctx.shadowBlur = 5; } else ctx.shadowBlur = 0;
@@ -80,6 +80,6 @@ export function HeroBackdropSphere() {
     raf = requestAnimationFrame(render);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
   }, []);
-  return <canvas ref={canvasRef} className="block select-none absolute inset-0 w-full h-full" style={{ filter: "contrast(1.07) saturate(1.12)" }} />;
+  return <canvas ref={canvasRef} className="block select-none absolute inset-0 w-full h-full"style={{ filter: "contrast(1.07) saturate(1.12)" }} />;
 }
 export { HeroBackdropSphere as BackgroundSphere };
