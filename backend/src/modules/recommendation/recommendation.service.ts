@@ -4,8 +4,11 @@ import { ClarificationAgent } from './agents/clarification.agent.js';
 import { GraphRAGAgent } from './agents/graph-rag.agent.js';
 import { TradeOffAgent } from './agents/tradeoff.agent.js';
 import { CostEfficiencyAgent } from './agents/cost-efficiency.agent.js';
+import { ChitChatAgent } from './agents/chitchat.agent.js';
 import { CacheService } from '../cache/cache.service.js';
 import { TelemetryService } from '../telemetry/telemetry.service.js';
+import { ProductsService } from '../products/products.service.js';
+import { PipelineService } from '../pipeline/pipeline.service.js';
 
 @Injectable()
 export class RecommendationService {
@@ -15,8 +18,11 @@ export class RecommendationService {
     private readonly graphRagAgent: GraphRAGAgent,
     private readonly tradeOffAgent: TradeOffAgent,
     private readonly costAgent: CostEfficiencyAgent,
+    private readonly chitChatAgent: ChitChatAgent,
     private readonly cache: CacheService,
     private readonly telemetry: TelemetryService,
+    private readonly productsService: ProductsService,
+    private readonly pipelineService: PipelineService,
   ) {}
 
   private makeTraceId() {
@@ -45,9 +51,46 @@ export class RecommendationService {
     const startAll = Date.now();
     const timings: Record<string, number> = {};
 
+    // 0. Chit-chat check TRƯỚC cache – để "chào bạn" / "dữ liệu có lớn không" không bị rập khuôn liệt kê giá
+    const chit = await this.chitChatAgent.detect(query);
+    if (chit.isChitChat) {
+      this.telemetry.start(traceId, 'ChitChat Agent', query);
+      this.telemetry.done(traceId, 'ChitChat Agent', 12, chit.intent);
+      let reply = chit.reply;
+      if (chit.intent === 'system_info') {
+        const count = this.productsService.findAll().length;
+        const lastRun = this.pipelineService.getLastRun();
+        const sources = 'CellphoneS, GearVN, Phong Vũ';
+        const avgPrice = lastRun?.gold?.avgPrice ? `${(lastRun.gold.avgPrice / 1_000_000).toFixed(1)}tr` : (count ? 'đang tính từ dữ liệu hiện có' : 'chưa có');
+        const status = count > 0 ? `hiện có **${count} sản phẩm thực** (tối đa 30, đang lưu trong memory + file \`backend/data/products.json\`)` : 'chưa có sản phẩm nào (bạn hãy bấm cào thử)';
+        const lastRunText = lastRun
+          ? `${lastRun.bronze.ingested} raw → ${lastRun.silver.cleaned} sạch, ${lastRun.silver.validated} hợp lệ – ${lastRun.status} lúc ${new Date(lastRun.startedAt).toLocaleString('vi-VN')}`
+          : count > 0
+            ? `có ${count} sp từ lần cào trước (đã lưu file, pipeline chưa chạy trong phiên này)`
+            : 'chưa chạy – hãy bấm “cào thêm”';
+        reply = `Dữ liệu của mình ${status}, được cào tự động từ **${sources}** mỗi 2h sáng qua pipeline **Bronze → Silver (Zod validate) → Gold**.\n\n- **Lần cào gần nhất:** ${lastRunText}\n- **Giá trung bình:** ${avgPrice} · **PP trung bình:** ${lastRun?.gold?.avgPP ?? (count ? 'đang tính' : '-')}\n- **Lưu trữ:** memory + file \`data/products.json\` (persist sau mỗi lần cào), có thể thay bằng Postgres/Qdrant nếu bạn muốn lớn hơn.\n\nBạn muốn mình cào thêm cho đủ 30 máy không? Chỉ cần nói “cào thêm” hoặc hỏi “15tr học CNTT” là mình lọc ngay!`;
+      }
+      return {
+        traceId,
+        intent: { budgetMin: undefined, budgetMax: undefined, constraints: ['Chit-chat'], useCases: [], tags: [] },
+        summary: reply!,
+        clarification: null,
+        products: [],
+        matrix: { headers: [], rows: [], analysis: '' },
+        critiques: [],
+        graphHits: [],
+        vectorHits: [],
+        chitChat: true,
+        chitChatIntent: chit.intent,
+        cache: { hit: false },
+        timings: { total: 12, chitChat: 12 },
+      };
+    }
+
     // Semantic cache (Redis) check
     const cached = this.cache.get<any>(query);
     if (cached.hit) {
+      // Nếu cache là chit-chat cũ thì vẫn trả, nhưng đã check ở trên nên không sao
       return {
         traceId,
         cache: { hit: true, latencyMs: cached.latencyMs },
@@ -115,6 +158,21 @@ export class RecommendationService {
   // For SSE streaming: yields events in order with delays to mimic reasoning
   async *stream(query: string): AsyncGenerator<{ event: string; data: any }> {
     const traceId = this.makeTraceId();
+
+    // Chit-chat early return cho stream
+    const chit = await this.chitChatAgent.detect(query);
+    if (chit.isChitChat) {
+      let reply = chit.reply;
+      if (chit.intent === 'system_info') {
+        const count = this.productsService.findAll().length;
+        const lastRun = this.pipelineService.getLastRun();
+        reply = `Dữ liệu hiện có **${count} sp thực** từ CellphoneS/GearVN/Phong Vũ, pipeline ${lastRun ? `${lastRun.bronze.ingested}→${lastRun.silver.cleaned} validated` : 'chưa chạy'}. Hỏi “cào thêm” để mình làm đầy nhé!`;
+      }
+      yield { event: 'intent', data: { intent: { budgetMin: undefined, budgetMax: undefined, constraints: ['Chit-chat'], useCases: [] }, latencyMs: 18, traceId } };
+      await this.pause(180);
+      yield { event: 'final', data: { traceId, summary: reply, clarification: null, products: [], matrix: { headers: [], rows: [], analysis: '' }, chitChat: true, chitChatIntent: chit.intent, cache: { hit: false } } };
+      return;
+    }
 
     const cached = this.cache.get<any>(query);
     if (cached.hit) {

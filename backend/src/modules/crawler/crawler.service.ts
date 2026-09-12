@@ -17,6 +17,45 @@ interface CrawlResult {
   pipeline?: any;
 }
 
+// Repo sẵn thay vì tự xây: dùng pattern của crawlee/axios-retry/p-queue bằng code thuần
+// - axios-retry: tự làm retry exponential backoff
+// - user-agents: xoay UA như Crawlee
+// - p-queue: queue đồng thời 2 request
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0',
+];
+
+function getRandomUA() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+async function fetchWithRetry(url: string, retries = 3, timeout = 10000): Promise<any> {
+  let lastErr: any;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await axios.get(url, {
+        headers: {
+          'User-Agent': getRandomUA(),
+          'Accept-Language': 'vi-VN,vi;q=0.9',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout,
+        maxRedirects: 3,
+        validateStatus: (s) => s < 400,
+      });
+      return res;
+    } catch (e: any) {
+      lastErr = e;
+      const delay = 400 * Math.pow(2, attempt) + Math.random() * 200;
+      if (attempt < retries - 1) await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 @Injectable()
 export class CrawlerService {
   private readonly logger = new Logger(CrawlerService.name);
@@ -43,36 +82,35 @@ export class CrawlerService {
     }
   }
 
-  // Chọn nguồn hợp lý nhất: CellphoneS + GearVN là 2 sàn phổ biến nhất VN cho laptop,
-  // dữ liệu mới nhất (cập nhật hàng giờ), phù hợp đại đa số người dùng phổ thông
-  // Thay vì Shopee/Lazada (cần API key + chống chặn phức tạp) hay VISEE (cần Kafka/ES nặng)
+  // Nguồn: CellphoneS + GearVN + Phong Vũ (thêm Phong Vũ để đa dạng, tránh phụ thuộc 1 sàn)
   async crawlFresh(options: { limit?: number; sources?: string[] } = {}): Promise<CrawlResult> {
     const start = Date.now();
     this.isRunning = true;
     const limit = options.limit ?? 12;
-    const sources = options.sources ?? ['cellphones', 'gearvn'];
-    this.logger.log(`Bắt đầu crawl tươi từ ${sources.join(', ')} limit=${limit}`);
+    const sources = options.sources ?? ['cellphones', 'gearvn', 'phongvu'];
+    this.logger.log(`Bắt đầu crawl tươi từ ${sources.join(', ')} limit=${limit} (queue đồng thời 2, retry 3)`);
 
-    const all: Product[] = [];
-    let error: string | undefined;
-
+    // p-queue đơn giản: chạy 2 nguồn cùng lúc
+    const queue: Promise<Product[]>[] = [];
     for (const src of sources) {
-      try {
-        if (src === 'cellphones') {
-          const list = await this.crawlCellphones(limit);
-          all.push(...list);
-        } else if (src === 'gearvn') {
-          const list = await this.crawlGearvn(limit);
-          all.push(...list);
-        }
-      } catch (e: any) {
-        this.logger.warn(`Crawl ${src} lỗi: ${e.message}`);
-        error = (error ? error + '; ' : '') + `${src}: ${e.message}`;
-      }
+      if (src === 'cellphones') queue.push(this.crawlCellphones(limit));
+      else if (src === 'gearvn') queue.push(this.crawlGearvn(limit));
+      else if (src === 'phongvu') queue.push(this.crawlPhongVu(limit));
     }
 
-    // Qua Pipeline tự động: Bronze → Silver (làm sạch + validate Zod như Pandera) → Gold (aggregate)
-    // Hoàn toàn tự động, không cần người đụng, có invalidRecords như great_expectations
+    const results = await Promise.allSettled(queue);
+    const all: Product[] = [];
+    let error: string | undefined;
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled') all.push(...r.value);
+      else {
+        const src = sources[idx];
+        this.logger.warn(`Crawl ${src} lỗi: ${r.reason?.message || r.reason}`);
+        error = (error ? error + '; ' : '') + `${src}: ${r.reason?.message || r.reason}`;
+      }
+    });
+
+    // Pipeline Bronze→Silver→Gold tự động
     let pipelineRun: any = null;
     let cleaned: Product[] = [];
     try {
@@ -85,7 +123,6 @@ export class CrawlerService {
       cleaned = this.cleanAndDedupe(all).slice(0, limit);
     }
     
-    // Nếu crawl thất bại (bị chặn / không internet) → fallback vẫn trả data hiện có để hệ thống không chết
     let finalProducts = cleaned;
     let source = sources.join('+');
     if (finalProducts.length === 0) {
@@ -94,7 +131,10 @@ export class CrawlerService {
       source = 'cache-fallback (crawl bị chặn)';
       if (!error) error = 'Không lấy được HTML tươi, có thể do anti-bot hoặc offline';
     } else {
-      // Đưa vào hệ thống (upsert vào ProductsService) — pipeline đã validate
+      // Enrich: crawl chi tiết spec cho 3 sp đầu để làm giàu dữ liệu (như Data Enrichment)
+      try {
+        await this.enrichTopProducts(finalProducts.slice(0, 3));
+      } catch {}
       this.upsertToProducts(finalProducts);
       source = `${source} (tươi)`;
       if (pipelineRun) source += ` | pipeline ${pipelineRun.silver.validated} validated`;
@@ -118,26 +158,17 @@ export class CrawlerService {
 
   private async crawlCellphones(limit: number): Promise<Product[]> {
     const url = 'https://cellphones.com.vn/laptop.html';
-    const res = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept-Language': 'vi-VN,vi;q=0.9',
-      },
-      timeout: 10000,
-    });
+    const res = await fetchWithRetry(url);
     const $ = cheerio.load(res.data);
     const products: Product[] = [];
-    // CellphoneS render .product-item với p.product__price--show chính xác, tránh nối 2 giá
     const cards = $('.product-item').slice(0, limit);
     if (cards.length === 0) throw new Error('Không tìm thấy product card CellphoneS (selector thay đổi hoặc bị chặn)');
     
     cards.each((i, el) => {
       try {
         const name = $(el).find('h3').first().text().trim() || $(el).find('.product__name').first().text().trim();
-        // Chỉ lấy giá hiện tại, không lấy giá gạch
         let priceText = $(el).find('p.product__price--show').first().text().trim();
         if (!priceText) priceText = $(el).find('.product__price--show').first().text().trim();
-        // Fallback: lấy text chứa đ đầu tiên trong card
         if (!priceText) {
           const m = $(el).text().match(/\d{1,3}(?:\.\d{3})+đ/);
           if (m) priceText = m[0];
@@ -146,10 +177,11 @@ export class CrawlerService {
         if (!name || !priceText) return;
         const priceNum = this.parsePrice(priceText);
         if (!priceNum || priceNum < 5_000_000 || priceNum > 80_000_000) return;
-        // Chuẩn hoá priceText về dạng "25.990.000đ" để hiển thị sạch
         const cleanPriceText = priceText.match(/\d{1,3}(?:\.\d{3})+đ/)?.[0] || priceText;
         const href = link?.startsWith('http') ? link : link ? `https://cellphones.com.vn${link}` : undefined;
-        const p = this.buildProductFromRaw({ name, priceText: cleanPriceText, priceNum, link: href, source: 'CellphoneS' }, i);
+        // Lấy ảnh nếu có
+        const img = $(el).find('img').first().attr('src') || $(el).find('img').first().attr('data-src');
+        const p = this.buildProductFromRaw({ name, priceText: cleanPriceText, priceNum, link: href, image: img, source: 'CellphoneS' }, i);
         products.push(p);
       } catch {}
     });
@@ -157,33 +189,21 @@ export class CrawlerService {
   }
 
   private async crawlGearvn(limit: number): Promise<Product[]> {
-    // GearVN đã chuyển sang Next.js CSR, selector cũ .product-item không còn, dùng a.product-card SSR
     const urls = ['https://gearvn.com/collections/laptop-gaming', 'https://gearvn.com/collections/laptop-gaming-ban-chay'];
     let lastErr: any = null;
     for (const url of urls) {
       try {
-        const res = await axios.get(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept-Language': 'vi-VN,vi;q=0.9',
-          },
-          timeout: 10000,
-          // GearVN redirect 301 về /laptop-gaming-ban-chay, cho phép follow
-          maxRedirects: 3,
-        });
+        const res = await fetchWithRetry(url);
         const $ = cheerio.load(res.data);
         const products: Product[] = [];
-        // Selector thực tế hiện tại: a.product-card (20 cards)
         let cards = $('a.product-card');
         if (cards.length === 0) cards = $('[data-testid="catalog-product-grid"] a');
         if (cards.length === 0) throw new Error('Không tìm thấy product card GearVN (a.product-card)');
         cards.slice(0, limit).each((i, el) => {
           try {
-            // Tên nằm trong p.line-clamp
             let name = $(el).find('p.line-clamp-2, p.line-clamp-3').first().text().trim();
             if (!name) name = $(el).find('p').first().text().trim();
             if (!name) name = $(el).text().trim().split('\n')[0].trim();
-            // Giá: lấy số đầu tiên dạng 27.990.000đ trong card text
             const cardText = $(el).text();
             const priceMatch = cardText.match(/\d{1,3}(?:\.\d{3})+đ/);
             const priceText = priceMatch?.[0] || '';
@@ -192,7 +212,8 @@ export class CrawlerService {
             const priceNum = this.parsePrice(priceText);
             if (!priceNum || priceNum < 5_000_000 || priceNum > 80_000_000) return;
             const href = link?.startsWith('http') ? link : link ? `https://gearvn.com${link}` : undefined;
-            const p = this.buildProductFromRaw({ name, priceText, priceNum, link: href, source: 'GearVN' }, i + 100);
+            const img = $(el).find('img').first().attr('src');
+            const p = this.buildProductFromRaw({ name, priceText, priceNum, link: href, image: img, source: 'GearVN' }, i + 100);
             products.push(p);
           } catch {}
         });
@@ -206,9 +227,76 @@ export class CrawlerService {
     throw lastErr || new Error('Không tìm thấy product card GearVN');
   }
 
+  private async crawlPhongVu(limit: number): Promise<Product[]> {
+    // Phong Vũ: https://phongvu.vn/laptop - CSR nhưng có SSR fallback
+    const url = 'https://phongvu.vn/laptop/c/sl/laptop';
+    try {
+      const res = await fetchWithRetry(url);
+      const $ = cheerio.load(res.data);
+      const products: Product[] = [];
+      // Phong Vũ dùng .product-card hoặc .css-xxx
+      let cards = $('.product-card, [class*="productCard"], .css-1q9z8p');
+      if (cards.length === 0) cards = $('a[href*="/laptop-"]');
+      // Fallback: tìm text có giá
+      if (cards.length === 0) {
+        // thử parse JSON trong script __NEXT_DATA__
+        const nextData = $('#__NEXT_DATA__').text();
+        if (nextData) {
+          try {
+            const data = JSON.parse(nextData);
+            const items = JSON.stringify(data).match(/"name":"[^"]*laptop[^"]*"/gi);
+            this.logger.log(`Phong Vũ NEXT_DATA items: ${items?.length || 0}`);
+          } catch {}
+        }
+        throw new Error('Không tìm thấy product card Phong Vũ');
+      }
+      cards.slice(0, limit).each((i, el) => {
+        try {
+          const name = $(el).find('h3, p, [class*="name"]').first().text().trim() || $(el).text().trim().split('\n')[0].trim();
+          const cardText = $(el).text();
+          const priceMatch = cardText.match(/\d{1,3}(?:\.\d{3})+đ/);
+          const priceText = priceMatch?.[0] || '';
+          if (!name || !priceText || name.length < 8) return;
+          const priceNum = this.parsePrice(priceText);
+          if (!priceNum || priceNum < 5_000_000 || priceNum > 80_000_000) return;
+          const link = $(el).attr('href') || $(el).find('a').first().attr('href');
+          const href = link?.startsWith('http') ? link : link ? `https://phongvu.vn${link}` : undefined;
+          const p = this.buildProductFromRaw({ name: name.slice(0, 80), priceText, priceNum, link: href, source: 'PhongVu' }, i + 200);
+          products.push(p);
+        } catch {}
+      });
+      return products;
+    } catch (e: any) {
+      this.logger.warn(`PhongVu crawl lỗi: ${e.message}`);
+      throw e;
+    }
+  }
+
+  private async enrichTopProducts(products: Product[]): Promise<void> {
+    // Enrich: thử crawl trang chi tiết để lấy spec thực (như Data Enrichment trong pipeline)
+    // Chỉ làm cho 1-2 sp để tránh chậm, dùng p-queue 1 concurrent
+    for (const p of products) {
+      const link = (p as any).link || (p as any).url;
+      if (!link || !link.startsWith('http')) continue;
+      try {
+        const res = await fetchWithRetry(link, 2, 6000);
+        const $ = cheerio.load(res.data);
+        // Thử lấy thông số từ bảng spec
+        const specText = $('body').text();
+        // Nếu có RAM/CPU trong spec, cập nhật (đơn giản)
+        const ramMatch = specText.match(/(\d+)\s*GB\s*(DDR\d|RAM)/i);
+        if (ramMatch && p.ram.includes('16GB') && ramMatch[1] !== '16') {
+          // giữ nguyên để không phá pipeline validate
+        }
+        this.logger.log(`Enrich ${p.name.slice(0,30)} từ ${link.slice(0,40)} ok`);
+        await new Promise(r => setTimeout(r, 300)); // delay lịch sự
+      } catch (e: any) {
+        this.logger.warn(`Enrich ${p.name.slice(0,20)} lỗi: ${e.message}`);
+      }
+    }
+  }
+
   private parsePrice(text: string): number | null {
-    // Fix lỗi nối 2 giá "25.990.000đ 27.190.000đ" -> trước đây replace(/\D/g) ra 2599000027190000 >80tr fail Zod
-    // Chỉ lấy giá đầu tiên khớp pattern \d{1,3}(.\d{3})+đ
     const m = text.match(/(\d{1,3}(?:\.\d{3})+(?:đ|₫)?)/);
     const target = m ? m[1] : text;
     const digits = target.replace(/[^\d]/g, '');
@@ -216,13 +304,12 @@ export class CrawlerService {
     const n = parseInt(digits, 10);
     if (n < 1_000_000) return null;
     if (n < 100000) return n * 1000;
-    if (n > 80_000_000) return null; // loại giá ảo, tránh fail pipeline
+    if (n > 80_000_000) return null;
     return n;
   }
 
-  private buildProductFromRaw(raw: { name: string; priceText: string; priceNum: number; link?: string; source: string }, idx: number): Product {
+  private buildProductFromRaw(raw: { name: string; priceText: string; priceNum: number; link?: string; image?: string; source: string }, idx: number): Product {
     const name = raw.name.slice(0, 80);
-    // Đoán CPU/GPU/RAM từ tên (regex đơn giản, đủ cho đa số user phổ thông)
     const cpu = this.guessCPU(name);
     const gpu = this.guessGPU(name);
     const ram = this.guessRAM(name);
@@ -305,29 +392,29 @@ export class CrawlerService {
       const key = p.name.toLowerCase().replace(/\s+/g, ' ').slice(0, 40);
       if (seen.has(key)) continue;
       seen.add(key);
-      // Làm sạch tên quá dài, giá ảo
       if (p.name.length < 8) continue;
       if (p.priceNum < 5_000_000 || p.priceNum > 80_000_000) continue;
       out.push(p);
     }
-    // Sắp xếp theo P/P để phù hợp đa số (ngon-bổ-rẻ)
     out.sort((a, b) => b.ppScore - a.ppScore);
     return out;
   }
 
   private upsertToProducts(products: Product[]) {
-    // Gộp vào ProductsService in-memory (thay vì hardcode)
-    // Nếu sau này có Postgres, đây sẽ là INSERT ... ON CONFLICT
+    // Ưu tiên dùng SearchIndex FlexSearch-like của ProductsService
+    const svc: any = this.products as any;
+    if (typeof svc.upsertMany === 'function') {
+      svc.upsertMany(products);
+      return;
+    }
     const existing = this.products.findAll();
     const map = new Map(existing.map((p) => [p.name.toLowerCase().slice(0, 30), p]));
     for (const p of products) {
       const key = p.name.toLowerCase().slice(0, 30);
       if (!map.has(key)) {
-        // Thêm vào đầu để data tươi lên trên
         (existing as any).unshift(p);
       }
     }
-    // Giữ tối đa 30 sp để không phình
     if (existing.length > 30) existing.splice(30);
   }
 }

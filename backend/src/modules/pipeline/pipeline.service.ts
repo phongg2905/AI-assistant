@@ -12,6 +12,10 @@ export const ProductSchema = z.object({
   ppScore: z.number().min(6).max(10),
 });
 
+// Repo sẵn: dùng Zod như Pandera/Great Expectations + FlexSearch dedupe
+// Nếu tự xây phức tạp: có thể thay bằng https://github.com/crawlee/crawlee (Apify Crawlee) cho crawler,
+// https://github.com/mongodb/mongo cho lưu, https://github.com/nextapps-de/flexsearch cho index
+
 export interface PipelineRun {
   runId: string;
   startedAt: string;
@@ -61,46 +65,91 @@ export class PipelineService {
     return { ingested, invalid, errors: errors.slice(0, 3) };
   }
 
-  // Giai đoạn 1: Silver - làm sạch + chuẩn hoá + validate (pandera/great_expectations style)
+  // Giai đoạn Silver - làm sạch + chuẩn hoá + validate (như Pandas + Pandera + OpenRefine)
+  // Nếu tự xây phức tạp, thay bằng repo: https://github.com/pandas-dev/pandas (Python) hoặc https://github.com/mongodb/mongo
   async transformSilver(candidates: any[]): Promise<{ cleaned: any[]; stats: PipelineRun['silver'] }> {
     const cleaned: any[] = [];
     let deduped = 0, validated = 0;
     const seen = new Set<string>();
 
     for (const raw of candidates) {
-      // Dedupe
-      const key = (raw.name || '').toLowerCase().replace(/\s+/g, ' ').slice(0, 40);
+      // 1. Làm sạch tên: trim, bỏ ký tự lạ, chuẩn hoá khoảng trắng, loại tên rác
+      let cleanName = String(raw.name || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      cleanName = cleanName.replace(/[^\p{L}\p{N}\s\-()./]/gu, '').trim(); // bỏ emoji/ký tự lạ
+      if (cleanName.length < 8) {
+        this.invalidRecords.push({ raw, reason: 'name too short', at: new Date().toISOString() });
+        continue;
+      }
+      // Dedupe đơn giản – thay Jaccard phức tạp bằng Set (đủ cho demo, nếu cần chính xác dùng FlexSearch)
+      const key = cleanName.toLowerCase().replace(/\s+/g, ' ').slice(0, 40);
       if (seen.has(key)) { deduped++; continue; }
       seen.add(key);
 
-      // Chuẩn hoá
+      // 2. Chuẩn hoá giá: bỏ dấu chấm, khoảng trắng, parse int
+      let priceNum = Number(raw.priceNum);
+      if (!priceNum || isNaN(priceNum)) {
+        const m = String(raw.price || raw.priceText || '').match(/\d{1,3}(?:\.\d{3})+/);
+        if (m) priceNum = parseInt(m[0].replace(/\./g, ''), 10);
+      }
+      // 3. Chuẩn hoá spec
+      const cpu = String(raw.cpu || this.guessCPU(cleanName)).trim();
+      const gpu = String(raw.gpu || this.guessGPU(cleanName)).trim();
+      let ram = String(raw.ram || '16GB');
+      if (!ram.includes('GB')) ram = `${ram}GB`;
+      ram = ram.replace(/\s+/g, ' ').trim();
+      const weightNum = Number(raw.weightNum) || parseFloat(String(raw.weight || '1.5')) || 1.5;
+      const batteryWh = Number(raw.batteryWh) || 50;
+      const ppScore = Math.min(10, Math.max(6, Number(raw.ppScore) || 7.5));
+
       const normalized = {
-        name: String(raw.name || '').trim().slice(0, 80),
-        priceNum: Number(raw.priceNum),
-        cpu: String(raw.cpu || 'i5-1335U').trim(),
-        gpu: String(raw.gpu || 'Iris Xe').trim(),
-        ram: String(raw.ram || '16GB').includes('GB') ? String(raw.ram) : `${raw.ram}GB`,
-        weightNum: Number(raw.weightNum) || parseFloat(String(raw.weight || '1.5')) || 1.5,
-        batteryWh: Number(raw.batteryWh) || 50,
-        ppScore: Number(raw.ppScore) || 7.5,
+        name: cleanName,
+        priceNum,
+        cpu,
+        gpu,
+        ram,
+        weightNum,
+        batteryWh,
+        ppScore: parseFloat(ppScore.toFixed(1)),
       };
 
-      // Validate như pandera: schema + domain checks
+      // 4. Validate Zod + Great Expectations checks
       const result = ProductSchema.safeParse(normalized);
       if (!result.success) {
         this.invalidRecords.push({ raw: normalized, reason: result.error.issues.map(i=>`${i.path}:${i.message}`).join('; '), at: new Date().toISOString() });
         continue;
       }
-      // Thêm check như great_expectations: expect_column_values_to_be_between
       if (normalized.priceNum < 5_000_000 || normalized.priceNum > 80_000_000) {
         this.invalidRecords.push({ raw, reason: 'price out of range', at: new Date().toISOString() });
         continue;
       }
-      cleaned.push({ ...raw, ...normalized });
+      // Enrich: tính lại ppScore nếu thiếu (như Data Enrichment)
+      if (!raw.ppScore) {
+        const enrichedPP = Math.min(9.2, 6.5 + (normalized.batteryWh / 20) + (normalized.weightNum < 1.5 ? 0.5 : 0));
+        normalized.ppScore = parseFloat(enrichedPP.toFixed(1));
+      }
+      cleaned.push({ ...raw, ...normalized, name: cleanName, priceNum });
       validated++;
     }
 
     return { cleaned, stats: { cleaned: cleaned.length, deduped, validated } };
+  }
+
+  private guessCPU(name: string): string {
+    const lower = name.toLowerCase();
+    if (lower.includes('ultra 7')) return 'Ultra 7 155H';
+    if (lower.includes('ultra 5')) return 'Ultra 5 125H';
+    if (lower.includes('i7')) return 'i7-13650H';
+    if (lower.includes('i5')) return 'i5-13420H';
+    if (lower.includes('ryzen 7')) return 'Ryzen 7 7735HS';
+    if (lower.includes('ryzen 5')) return 'Ryzen 5 7535HS';
+    return 'i5-1335U';
+  }
+  private guessGPU(name: string): string {
+    const lower = name.toLowerCase();
+    if (lower.includes('4050')) return 'RTX 4050 75W';
+    if (lower.includes('4060')) return 'RTX 4060 85W';
+    if (lower.includes('3050')) return 'RTX 3050 65W';
+    return 'Iris Xe';
   }
 
   // Giai đoạn 1: Gold - aggregate cho BI / Recommendation
