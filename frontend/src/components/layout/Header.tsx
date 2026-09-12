@@ -45,8 +45,13 @@ export function Header({ showHistory, showAccount, onToggleHistory, onToggleAcco
           radius={9999}
           frost={0.52}
           saturation={1.25}
-          displacementScale={18}
-          blur={6}
+          bezelWidth={13}
+          thickness={9}
+          refractiveIndex={1.5}
+          surface="convexSquircle"
+          scaleRatio={1}
+          specularOpacity={0.38}
+          blur={0.8}
           className="pointer-events-auto"
         >
           <div className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full">
@@ -61,8 +66,13 @@ export function Header({ showHistory, showAccount, onToggleHistory, onToggleAcco
             radius={9999}
             frost={0.48}
             saturation={1.2}
-            displacementScale={16}
-            blur={6}
+            bezelWidth={12}
+            thickness={8}
+            refractiveIndex={1.5}
+            surface="convexSquircle"
+            scaleRatio={1}
+            specularOpacity={0.36}
+            blur={0.8}
             className="pointer-events-auto"
           >
             <div className="flex items-center gap-2 px-2 py-1.5 rounded-full">
