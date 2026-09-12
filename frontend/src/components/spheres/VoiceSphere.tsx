@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 
-export function ParticleSphere({ mode, levels }: { mode: "listening" | "analyzing"; levels: number[] }) {
+export function VoiceSphere({ mode, levels }: { mode: "listening" | "analyzing"; levels: number[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const levelsRef = useRef(levels);
   useEffect(() => {
@@ -141,3 +141,5 @@ export function ParticleSphere({ mode, levels }: { mode: "listening" | "analyzin
   }, [mode]);
   return <canvas ref={canvasRef} className="block select-none" style={{ width: 340, height: 340, filter: "contrast(1.08) saturate(1.14)" }} />;
 }
+// alias để tương thích tên cũ trước khi đổi
+export { VoiceSphere as ParticleSphere };

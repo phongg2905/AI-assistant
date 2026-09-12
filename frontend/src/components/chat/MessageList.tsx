@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage } from "@/lib/domain.types";
 import { MessageItem } from "./MessageItem";
 import { ThinkingIndicator, StreamingIndicator } from "./ThinkingIndicator";
 

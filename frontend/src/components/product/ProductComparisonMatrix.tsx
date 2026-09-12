@@ -1,6 +1,6 @@
 "use client";
 
-export function ComparisonMatrix() {
+export function ProductComparisonMatrix() {
   return (
     <div className="overflow-hidden rounded-[16px] bg-[#F0F2F5] shadow-[6px_6px_16px_#C8D0E0,-6px_-6px_16px_#FFFFFF] border border-white/60 stagger-card max-w-[760px]" style={{ animationDelay: "120ms" }}>
       <div className="grid grid-cols-3 divide-x divide-[#E6E9EF] text-[12px] font-sans relative z-10">
@@ -23,3 +23,4 @@ export function ComparisonMatrix() {
     </div>
   );
 }
+export { ProductComparisonMatrix as ComparisonMatrix };

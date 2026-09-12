@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-export function useBackendHealth() {
+export function useApiHealth() {
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [lastTrace, setLastTrace] = useState<string | null>(null);
   const [lastCacheHit, setLastCacheHit] = useState<boolean | null>(null);
@@ -15,3 +15,4 @@ export function useBackendHealth() {
   }, []);
   return { backendOk, setBackendOk, lastTrace, setLastTrace, lastCacheHit, setLastCacheHit };
 }
+export { useApiHealth as useBackendHealth };

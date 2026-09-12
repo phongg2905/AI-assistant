@@ -1,7 +1,7 @@
 "use client";
 
-import { AvatarSphere } from "../spheres/AvatarSphere";
-import { ThinkingSphere } from "../spheres/ThinkingSphere";
+import { AvatarSphere } from "../spheres/ChatAvatarSphere";
+import { ThinkingSphere } from "../spheres/ChatThinkingSphere";
 
 export function ThinkingIndicator() {
   return (

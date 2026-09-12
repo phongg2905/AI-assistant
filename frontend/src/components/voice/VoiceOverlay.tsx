@@ -1,6 +1,6 @@
 "use client";
 
-import { ParticleSphere } from "../spheres/ParticleSphere";
+import { ParticleSphere } from "../spheres/VoiceSphere";
 
 type Props = {
   isListening: boolean;

@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 
-export function ThinkingSphere() {
+export function ChatThinkingSphere() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -76,3 +76,4 @@ export function ThinkingSphere() {
   }, []);
   return <canvas ref={canvasRef} className="block select-none" style={{ width: 56, height: 56, filter: "contrast(1.06) saturate(1.08)" }} />;
 }
+export { ChatThinkingSphere as ThinkingSphere };

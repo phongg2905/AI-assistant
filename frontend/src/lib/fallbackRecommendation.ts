@@ -1,5 +1,5 @@
-import { MOCK_PRODUCTS } from "./mockData";
-import type { Product } from "./types";
+import { MOCK_PRODUCTS } from "./mockProducts";
+import type { Product } from "./domain.types";
 
 export function buildFallbackSummary(query: string): string {
   const lower = query.toLowerCase();

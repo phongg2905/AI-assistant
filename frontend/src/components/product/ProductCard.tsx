@@ -1,6 +1,6 @@
 "use client";
 
-import type { Product } from "@/lib/types";
+import type { Product } from "@/lib/domain.types";
 
 type Props = { product: Product; index: number };
 

@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 
-export function BackgroundSphere() {
+export function HeroBackdropSphere() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -82,3 +82,4 @@ export function BackgroundSphere() {
   }, []);
   return <canvas ref={canvasRef} className="block select-none absolute inset-0 w-full h-full" style={{ filter: "contrast(1.07) saturate(1.12)" }} />;
 }
+export { HeroBackdropSphere as BackgroundSphere };

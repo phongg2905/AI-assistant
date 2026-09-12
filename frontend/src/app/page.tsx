@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
-import { HeroSection } from "@/components/chat/HeroSection";
+import { HeroSection } from "@/components/chat/HomeHeroSection";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
-import { useBackendHealth } from "@/hooks/useBackendHealth";
+import { useBackendHealth } from "@/hooks/useApiHealth";
 import { useChat } from "@/hooks/useChat";
 import { useVoice } from "@/hooks/useVoice";
 
@@ -56,6 +56,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#EEF2F7] text-[#2B2E36] selection:bg-[#FF3B00]/20 overflow-x-hidden overflow-y-visible relative">
+      {/* Liquid Glass refraction background – subtle texture to make displacement visible, like freefrontend demo */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.55]"
+        aria-hidden
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1551384963-cccb0b7ed94b?q=80&w=2000&auto=format&fit=crop), radial-gradient(900px 600px at 18% 20%, rgba(56,189,248,0.22), transparent 60%), radial-gradient(800px 600px at 85% 78%, rgba(168,85,247,0.18), transparent 60%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundBlendMode: "overlay",
+          filter: "saturate(1.15) contrast(1.05)",
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#EEF2F7]/72 backdrop-blur-[0.5px]" aria-hidden />
       <Header
         showHistory={showHistory}
         showAccount={showAccount}

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
-import type { ChatMessage, Product } from "@/lib/types";
-import { buildFallbackSummary, getFallbackProducts } from "@/lib/recommendation";
+import type { ChatMessage, Product } from "@/lib/domain.types";
+import { buildFallbackSummary, getFallbackProducts } from "@/lib/fallbackRecommendation";
 export function useChat(
   backendControls: { setBackendOk: (v: boolean) => void; setLastTrace: (v: string | null) => void; setLastCacheHit: (v: boolean | null) => void },
 ) {

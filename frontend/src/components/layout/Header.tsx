@@ -1,5 +1,9 @@
 "use client";
 
+import { useRef, useEffect } from "react";
+import { LiquidGlass } from "@/components/ui/LiquidGlassEffect";
+import { LogoMark } from "@/components/ui/BrandLogo";
+
 type Props = {
   showHistory: boolean;
   showAccount: boolean;
@@ -11,32 +15,66 @@ type Props = {
 };
 
 export function Header({ showHistory, showAccount, onToggleHistory, onToggleAccount, onCloseHistory, onCloseAccount, onSelectHistory }: Props) {
+  const historyRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  // click-outside để đóng popup – fix lỗi trước đây chỉ đóng bằng nút ✕
+  useEffect(() => {
+    if (!showHistory && !showAccount) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (showHistory && historyRef.current && !historyRef.current.contains(t)) {
+        // kiểm tra nút trigger có nằm ngoài không – nếu click vào nút Lịch sử thì đã handle toggle, không close ngay
+        const histBtn = document.getElementById("btn-history");
+        if (histBtn && histBtn.contains(t)) return;
+        onCloseHistory();
+      }
+      if (showAccount && accountRef.current && !accountRef.current.contains(t)) {
+        const accBtn = document.getElementById("btn-account");
+        if (accBtn && accBtn.contains(t)) return;
+        onCloseAccount();
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showHistory, showAccount, onCloseHistory, onCloseAccount]);
+
   return (
     <header className="fixed top-0 inset-x-0 h-[56px] flex items-center justify-between px-3 lg:px-6 bg-transparent border-0 shadow-none z-40 pointer-events-none">
-        <div className="flex items-center gap-2.5 bg-[#F0F2F5]/78 backdrop-blur-xl rounded-full pl-2 pr-3 py-1.5 shadow-[6px_6px_16px_rgba(180,190,210,0.38),-6px_-6px_16px_rgba(255,255,255,0.85)] border border-white/55 pointer-events-auto">
-          <div className="w-8 h-8 rounded-[12px] bg-[#F0F2F5] flex items-center justify-center shadow-[4px_4px_10px_#CBD5E6,-4px_-4px_10px_#FFFFFF] overflow-hidden shrink-0">
-            <svg width="32" height="32" viewBox="0 0 32 32" className="w-[28px] h-[28px]">
-              <defs>
-                <radialGradient id="twLogoGrad" cx="30%" cy="22%" r="78%">
-                  <stop offset="0%" stopColor="#38BDF8" />
-                  <stop offset="48%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#A855F7" />
-                </radialGradient>
-              </defs>
-              <circle cx="16" cy="16" r="11.2" fill="url(#twLogoGrad)" />
-              <circle cx="12.2" cy="11.4" r="2.7" fill="white" opacity="0.92" />
-              <circle cx="12.2" cy="11.4" r="0.9" fill="white" />
-            </svg>
+        <LiquidGlass
+          radius={9999}
+          frost={0.52}
+          saturation={1.25}
+          displacementScale={18}
+          blur={6}
+          className="pointer-events-auto"
+        >
+          <div className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full">
+            <LogoMark size={32} animated />
+            <span className="font-sans font-semibold tracking-[-0.03em] text-[17px] leading-none text-[#1A1D24]">tech<span className="font-semibold text-[#FF3B00]">wise</span></span>
           </div>
-          <span className="font-sans font-semibold tracking-[-0.03em] text-[17px] leading-none text-[#1A1D24]">tech<span className="font-semibold text-[#FF3B00]">wise</span></span>
-        </div>
-        <div className="flex items-center gap-2 bg-[#F0F2F5]/75 backdrop-blur-xl rounded-full px-2 py-1.5 shadow-[6px_6px_16px_rgba(180,190,210,0.38),-6px_-6px_16px_rgba(255,255,255,0.85)] border border-white/55 pointer-events-auto relative">
-          <button onClick={onToggleHistory} className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-sans font-medium tracking-[0.01em] text-[#1A1D24] bg-[#F0F2F5] rounded-full px-3.5 py-1.5 shadow-[3px_3px_8px_#C8D0E0,-3px_-3px_8px_#FFFFFF] hover:shadow-[5px_5px_10px_#C8D0E0] transition-shadow">Lịch sử</button>
-          <button onClick={onToggleAccount} className="w-8 h-8 rounded-full bg-[#F0F2F5] flex items-center justify-center text-[11px] font-sans font-semibold text-[#1A1D24] shadow-[4px_4px_10px_#C8D0E0,-4px_-4px_10px_#FFFFFF] hover:shadow-[5px_5px_12px_#C8D0E0] transition-shadow overflow-hidden">
-            <img src="https://i.pravatar.cc/100?img=32" alt="avatar" className="w-full h-full object-cover" />
-          </button>
+        </LiquidGlass>
+
+        {/* Wrapper tách riêng: LiquidGlass pill + popup absolute bên ngoài để không bị overflow-hidden cắt */}
+        <div className="relative pointer-events-auto flex flex-col items-end">
+          <LiquidGlass
+            radius={9999}
+            frost={0.48}
+            saturation={1.2}
+            displacementScale={16}
+            blur={6}
+            className="pointer-events-auto"
+          >
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-full">
+              <button id="btn-history" onClick={onToggleHistory} className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-sans font-medium tracking-[0.01em] text-[#1A1D24] bg-[#F0F2F5] rounded-full px-3.5 py-1.5 shadow-[3px_3px_8px_#C8D0E0,-3px_-3px_8px_#FFFFFF] hover:shadow-[5px_5px_10px_#C8D0E0] transition-shadow">Lịch sử</button>
+              <button id="btn-account" onClick={onToggleAccount} className="w-8 h-8 rounded-full bg-[#F0F2F5] flex items-center justify-center text-[11px] font-sans font-semibold text-[#1A1D24] shadow-[4px_4px_10px_#C8D0E0,-4px_-4px_10px_#FFFFFF] hover:shadow-[5px_5px_12px_#C8D0E0] transition-shadow overflow-hidden">
+                <img src="https://i.pravatar.cc/100?img=32" alt="avatar" className="w-full h-full object-cover" />
+              </button>
+            </div>
+          </LiquidGlass>
+
           {showAccount && (
-            <div className="absolute top-full right-0 mt-2 w-64 rounded-[16px] bg-[#F0F2F5] shadow-[8px_8px_24px_#C8D0E0,-8px_-8px_24px_#FFFFFF] border border-white/60 p-3 z-50">
+            <div ref={accountRef} className="absolute top-full right-0 mt-2 w-64 rounded-[16px] bg-[#F0F2F5] shadow-[8px_8px_24px_#C8D0E0,-8px_-8px_24px_#FFFFFF] border border-white/60 p-3 z-50 animate-[cardIn_180ms_cubic-bezier(0.16,1,0.3,1)]">
               <div className="flex items-center gap-3">
                 <img src="https://i.pravatar.cc/100?img=32" alt="avatar" className="w-10 h-10 rounded-full object-cover shadow-[3px_3px_8px_#C8D0E0]" />
                 <div>
@@ -51,7 +89,7 @@ export function Header({ showHistory, showAccount, onToggleHistory, onToggleAcco
             </div>
           )}
           {showHistory && (
-            <div className="absolute top-full right-0 mt-2 w-[340px] max-w-[90vw] rounded-[16px] bg-[#F0F2F5] shadow-[8px_8px_24px_#C8D0E0,-8px_-8px_24px_#FFFFFF] border border-white/60 p-3 z-50 flex flex-col max-h-[420px]">
+            <div ref={historyRef} className="absolute top-full right-0 mt-2 w-[340px] max-w-[90vw] rounded-[16px] bg-[#F0F2F5] shadow-[8px_8px_24px_#C8D0E0,-8px_-8px_24px_#FFFFFF] border border-white/60 p-3 z-50 flex flex-col max-h-[420px] animate-[cardIn_180ms_cubic-bezier(0.16,1,0.3,1)]">
               <div className="flex items-center justify-between px-1 pb-2">
                 <h3 className="font-sans font-semibold text-[13px] text-[#1A1D24]">Lịch sử trò chuyện</h3>
                 <button onClick={onCloseHistory} className="w-7 h-7 rounded-full bg-[#F0F2F5] shadow-[2px_2px_6px_#C8D0E0,-2px_-2px_6px_#FFFFFF] flex items-center justify-center text-[11px] text-[#6B6F7B] hover:shadow-[3px_3px_8px_#C8D0E0] transition-shadow">✕</button>

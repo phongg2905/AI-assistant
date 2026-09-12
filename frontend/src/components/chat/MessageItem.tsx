@@ -1,9 +1,9 @@
 "use client";
 
-import type { ChatMessage } from "@/lib/types";
-import { AvatarSphere } from "../spheres/AvatarSphere";
+import type { ChatMessage } from "@/lib/domain.types";
+import { AvatarSphere } from "../spheres/ChatAvatarSphere";
 import { ClarificationCard } from "../product/ClarificationCard";
-import { ComparisonMatrix } from "../product/ComparisonMatrix";
+import { ComparisonMatrix } from "../product/ProductComparisonMatrix";
 import { ProductCard } from "../product/ProductCard";
 
 type Props = {

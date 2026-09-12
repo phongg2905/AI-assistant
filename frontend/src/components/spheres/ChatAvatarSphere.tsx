@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 
-export function AvatarSphere() {
+export function ChatAvatarSphere() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -73,3 +73,4 @@ export function AvatarSphere() {
   }, []);
   return <canvas ref={canvasRef} className="block select-none" style={{ width: 72, height: 72, margin: -20, filter: "contrast(1.10) saturate(1.16) drop-shadow(0 0 4px rgba(56,189,248,0.15))" }} />;
 }
+export { ChatAvatarSphere as AvatarSphere };
