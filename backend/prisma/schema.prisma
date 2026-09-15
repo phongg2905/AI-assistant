@@ -1,0 +1,57 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  name             String
+  brand            String
+  priceVnd         Float
+  originalPriceVnd Float?
+  imageUrl         String?
+  productUrl       String?
+  source           String
+  cpu              String
+  gpu              String?
+  ramGb            Int
+  storageGb        Int
+  storageType      String?
+  screenSizeInch   Float
+  resolution       String?
+  refreshRateHz    Int?
+  batteryWattHours Float?
+  weightKg         Float
+  inStock          Boolean  @default(true)
+  tags             String[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  reviews          Review[]
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  productId String
+  author    String
+  rating    Float
+  comment   String
+  source    String
+  sentiment String   @default("neutral")
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  title     String
+  userId    String?
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
