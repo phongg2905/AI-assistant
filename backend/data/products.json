@@ -1,0 +1,298 @@
+[
+  {
+    "id": "prod-ideapad-gaming-3",
+    "name": "Lenovo IdeaPad Gaming 3 15ARH7",
+    "category": "GAMING",
+    "price": "17.490.000₫",
+    "priceNum": 17490000,
+    "cpu": "Ryzen 5 7535HS",
+    "cpuBenchmark": 11400,
+    "gpu": "RTX 3050 85W",
+    "gpuTGP": 85,
+    "ram": "16GB DDR5 (8+8)",
+    "ramGB": 16,
+    "ramUpgradeable": true,
+    "storage": "512GB NVMe M.2 SSD",
+    "display": "15.6″ FHD 120Hz 45% NTSC IPS",
+    "weight": "2.32kg",
+    "weightNum": 2.32,
+    "batteryWh": 45,
+    "material": "Nhựa",
+    "ppScore": 8.6,
+    "regret": "Thấp",
+    "regretColor": "#22c55e",
+    "regretReasons": [
+      "Màn hình 45% NTSC nhạt màu hơn chuẩn sRGB",
+      "Pin 45Wh tương đối thấp, cần cắm sạc khi gaming"
+    ],
+    "benchmark": "Cinebench R23 Multi: 11.4k · Valorant: 180+ FPS",
+    "pros": [
+      "GPU RTX 3050 85W cho hiệu năng đồ hoạ / game tốt",
+      "2 khe RAM DDR5 nâng cấp tối đa 64GB",
+      "Tản nhiệt 2 quạt ổn định"
+    ],
+    "cons": [
+      "Trọng lượng 2.32kg (kèm củ sạc nặng ~2.8kg)",
+      "Màn hình màu sắc ở mức trung bình"
+    ],
+    "affiliate": "Shopee / CellphoneS",
+    "badge": "BEST P/P GAMING",
+    "canRun": [
+      "Valorant",
+      "Genshin Impact",
+      "CS2",
+      "Docker",
+      "IntelliJ IDEA",
+      "VS Code",
+      "Premiere Pro"
+    ],
+    "limitations": [
+      "Hạn chế khi render 3D nặng hoặc chơi game AAA ở cài đặt Ultra"
+    ]
+  },
+  {
+    "id": "prod-swift-go-14-oled",
+    "name": "Acer Swift Go 14 SFG14-73 OLED",
+    "category": "ULTRABOOK",
+    "price": "18.990.000₫",
+    "priceNum": 18990000,
+    "cpu": "Intel Core Ultra 5 125H",
+    "cpuBenchmark": 13200,
+    "gpu": "Intel Arc Graphics (7 Xe-cores)",
+    "gpuTGP": 28,
+    "ram": "16GB LPDDR5X 6400MHz (Onboard)",
+    "ramGB": 16,
+    "ramUpgradeable": false,
+    "storage": "512GB PCIe Gen4 NVMe SSD",
+    "display": "14″ 2.8K OLED (2880x1800) 90Hz 100% DCI-P3 400 nits",
+    "weight": "1.32kg",
+    "weightNum": 1.32,
+    "batteryWh": 65,
+    "material": "Nhôm",
+    "ppScore": 8.4,
+    "regret": "Thấp",
+    "regretColor": "#22c55e",
+    "regretReasons": [
+      "RAM hàn chết không nâng cấp thêm được",
+      "Không có GPU rời cho các tác vụ 3D / AI training nặng"
+    ],
+    "benchmark": "Geekbench 6 Multi: 11.8k · Cinebench R23: 13.2k · Valorant: 110 FPS",
+    "pros": [
+      "Màn hình 2.8K OLED chuẩn màu 100% DCI-P3 xuất sắc",
+      "Trọng lượng siêu nhẹ 1.32kg vỏ nhôm nguyên khối",
+      "Pin 65Wh sử dụng thực tế 7-9 giờ học tập / code"
+    ],
+    "cons": [
+      "RAM hàn chết 16GB",
+      "Không có GPU rời"
+    ],
+    "affiliate": "CellphoneS",
+    "badge": "TOP MỎNG NHẸ OLED",
+    "canRun": [
+      "VS Code",
+      "IntelliJ IDEA",
+      "Docker (vừa)",
+      "Figma",
+      "Photoshop",
+      "Valorant 1080p",
+      "Office"
+    ],
+    "limitations": [
+      "Không tối ưu cho game AAA nặng hoặc huấn luyện mô hình Deep Learning local"
+    ]
+  },
+  {
+    "id": "prod-victus-15",
+    "name": "HP Victus 15-fa1xxx",
+    "category": "ENTRY GAMING",
+    "price": "16.290.000₫",
+    "priceNum": 16290000,
+    "cpu": "Intel Core i5-13420H",
+    "cpuBenchmark": 11800,
+    "gpu": "RTX 2050 4GB 45W",
+    "gpuTGP": 45,
+    "ram": "16GB DDR4 (8+8)",
+    "ramGB": 16,
+    "ramUpgradeable": true,
+    "storage": "512GB NVMe SSD",
+    "display": "15.6″ FHD 144Hz IPS 45% NTSC",
+    "weight": "2.29kg",
+    "weightNum": 2.29,
+    "batteryWh": 52.5,
+    "material": "Nhựa",
+    "ppScore": 7.8,
+    "regret": "Trung bình",
+    "regretColor": "#eab308",
+    "regretReasons": [
+      "RTX 2050 yếu hơn RTX 3050 ~30%",
+      "Màn hình màu sắc 45% NTSC nhạt, không chuẩn cho đồ họa"
+    ],
+    "benchmark": "Cinebench R23 Multi: 11.8k · Valorant: 140 FPS",
+    "pros": [
+      "Mức giá rẻ nhất cho laptop có GPU rời thế hệ mới",
+      "Nâng cấp RAM và SSD dễ dàng"
+    ],
+    "cons": [
+      "Bản lề hơi flex nhẹ",
+      "Màn hình nhạt màu",
+      "Card 2050 45W mức entry-level"
+    ],
+    "affiliate": "GearVN",
+    "canRun": [
+      "Valorant",
+      "League of Legends",
+      "VS Code",
+      "IntelliJ",
+      "Docker"
+    ],
+    "limitations": [
+      "Không phù hợp thiết kế đồ hoạ chuyên nghiệp do màu màn hình"
+    ]
+  },
+  {
+    "id": "prod-tuf-gaming-a15",
+    "name": "ASUS TUF Gaming A15 FA507NU",
+    "category": "GAMING",
+    "price": "21.490.000₫",
+    "priceNum": 21490000,
+    "cpu": "AMD Ryzen 7 7735HS",
+    "cpuBenchmark": 14600,
+    "gpu": "RTX 4050 6GB 140W (Full TGP)",
+    "gpuTGP": 140,
+    "ram": "16GB DDR5 4800MHz",
+    "ramGB": 16,
+    "ramUpgradeable": true,
+    "storage": "512GB PCIe 4.0 NVMe M.2",
+    "display": "15.6″ FHD 144Hz 100% sRGB G-Sync",
+    "weight": "2.20kg",
+    "weightNum": 2.2,
+    "batteryWh": 90,
+    "material": "Hợp kim",
+    "ppScore": 9.1,
+    "regret": "Thấp",
+    "regretColor": "#22c55e",
+    "regretReasons": [
+      "Máy to nặng 2.2kg, cần diện tích balo lớn"
+    ],
+    "benchmark": "Cinebench R23: 14.6k · 3DMark TimeSpy: 8.8k · Cyberpunk 2077: 70+ FPS (DLSS 3)",
+    "pros": [
+      "RTX 4050 140W cực mạnh hỗ trợ DLSS 3 Frame Gen",
+      "Pin 90Wh lớn bậc nhất phân khúc",
+      "Màn hình 100% sRGB chuẩn màu gaming"
+    ],
+    "cons": [
+      "Củ sạc to nặng"
+    ],
+    "affiliate": "Phong Vũ",
+    "badge": "HIỆU NĂNG TỐI ĐA",
+    "canRun": [
+      "Cyberpunk 2077",
+      "Valorant 240FPS",
+      "AI / PyTorch CUDA",
+      "Docker",
+      "Android Studio",
+      "Blender"
+    ],
+    "limitations": [
+      "Không phù hợp người cần di chuyển liên tục mỗi ngày"
+    ]
+  },
+  {
+    "id": "prod-thinkbook-14-g6",
+    "name": "Lenovo ThinkBook 14 G6+ IRL",
+    "category": "WORKSTATION",
+    "price": "16.900.000₫",
+    "priceNum": 16900000,
+    "cpu": "Intel Core i5-13500H",
+    "cpuBenchmark": 14200,
+    "gpu": "Intel Iris Xe Graphics",
+    "gpuTGP": 25,
+    "ram": "16GB DDR5 (2 khe nâng cấp)",
+    "ramGB": 16,
+    "ramUpgradeable": true,
+    "storage": "512GB M.2 PCIe 4.0 SSD",
+    "display": "14″ 2.5K (2560x1600) 90Hz 100% sRGB 350 nits",
+    "weight": "1.38kg",
+    "weightNum": 1.38,
+    "batteryWh": 60,
+    "material": "Nhôm",
+    "ppScore": 8.7,
+    "regret": "Thấp",
+    "regretColor": "#22c55e",
+    "regretReasons": [
+      "Không có GPU rời cho tác vụ dựng hình 3D hay game nặng"
+    ],
+    "benchmark": "Cinebench R23 Multi: 14.2k · Geekbench 6: 12.1k · Code build tốc độ cao",
+    "pros": [
+      "CPU dòng H hiệu năng cao nhưng vẫn mỏng nhẹ 1.38kg",
+      "2 khe RAM DDR5 nâng cấp được (hiếm có trên ultrabook)",
+      "Bàn phím ThinkBook gõ cực êm, đầy đủ cổng kết nối (có RJ45 LAN)"
+    ],
+    "cons": [
+      "iGPU Iris Xe không chơi được game AAA"
+    ],
+    "affiliate": "CellphoneS",
+    "badge": "LỰA CHỌN IT / DEV TỐT NHẤT",
+    "canRun": [
+      "IntelliJ IDEA",
+      "Docker",
+      "Kubernetes local",
+      "VS Code",
+      "Valorant 70-90 FPS",
+      "Figma"
+    ],
+    "limitations": [
+      "Game nặng 3D yêu cầu GPU rời"
+    ]
+  },
+  {
+    "id": "prod-macbook-air-m2",
+    "name": "Apple MacBook Air 13 M2 2022",
+    "category": "ULTRABOOK",
+    "price": "23.490.000₫",
+    "priceNum": 23490000,
+    "cpu": "Apple M2 (8-core CPU, 8-core GPU)",
+    "cpuBenchmark": 10100,
+    "gpu": "Apple M2 8-core GPU",
+    "gpuTGP": 15,
+    "ram": "16GB Unified Memory",
+    "ramGB": 16,
+    "ramUpgradeable": false,
+    "storage": "256GB SSD",
+    "display": "13.6″ Liquid Retina 500 nits P3",
+    "weight": "1.24kg",
+    "weightNum": 1.24,
+    "batteryWh": 52.6,
+    "material": "Nhôm",
+    "ppScore": 8.2,
+    "regret": "Thấp",
+    "regretColor": "#22c55e",
+    "regretReasons": [
+      "Bộ nhớ 256GB cơ bản hơi hẹp, không nâng cấp được sau khi mua",
+      "Không chơi được các game Windows anti-cheat (Valorant)"
+    ],
+    "benchmark": "Geekbench 6 Single: 2.6k · Multi: 10.1k · Pin thực tế: 14-16 giờ",
+    "pros": [
+      "Thời lượng pin vô địch 14-16 giờ",
+      "Trọng lượng siêu nhẹ 1.24kg, máy hoàn toàn không dùng quạt (yên tĩnh tuyệt đối)",
+      "Màn hình Retina sắc nét, loa và mic studio"
+    ],
+    "cons": [
+      "Không chơi được Valorant",
+      "Không nâng cấp phần cứng"
+    ],
+    "affiliate": "Apple Authorised Reseller",
+    "badge": "PIN VÔ ĐỊCH",
+    "canRun": [
+      "Web development",
+      "Node.js / React",
+      "Swift / iOS Dev",
+      "Photoshop",
+      "Figma",
+      "Office"
+    ],
+    "limitations": [
+      "Không chơi được Valorant (chỉ Windows có Vanguard)"
+    ]
+  }
+]

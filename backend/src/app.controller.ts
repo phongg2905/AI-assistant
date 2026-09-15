@@ -10,19 +10,30 @@ export class AppController {
     return {
       service: 'TechWise API Gateway',
       version: '1.0.0',
-      architecture: 'NestJS + GraphRAG + Multi-Agent',
+      description: 'Domain-specific AI Laptop Shopping Assistant',
+      architecture: 'NestJS Clean Architecture (AI Orchestrator + Approved Tools + Domain Services)',
       endpoints: {
-        recommend: 'POST /api/recommend {query}',
-        stream: 'GET /api/recommend/stream?query=...  (SSE)',
-        products: 'GET /api/products?budgetMin=&budgetMax=&q=',
-        health: 'GET /api',
+        chat: 'POST /api/chat {query: string}',
+        chatStream: 'GET /api/chat/stream?query=... (SSE)',
+        recommend: 'POST /api/recommend {query: string}',
+        recommendStream: 'GET /api/recommend/stream?query=... (SSE)',
+        products: 'GET /api/products?budgetMin=&budgetMax=&q=&category=',
+        productDetails: 'GET /api/products/:id',
+        conversations: 'GET /api/conversations',
+        crawlerStatus: 'GET /api/crawler/status',
+        crawlerRun: 'POST /api/crawler/run?limit=8',
+        health: 'GET /api/health',
       },
-      docs: 'See instruction.md for 5 breakthroughs: Intent, Trade-off, GraphRAG, Clarification, Caching',
     };
   }
 
   @Get('health')
   health() {
-    return { status: 'ok', uptime: process.uptime(), ts: Date.now() };
+    return {
+      status: 'ok',
+      service: 'TechWise Backend',
+      uptime: process.uptime(),
+      timestamp: Date.now(),
+    };
   }
 }

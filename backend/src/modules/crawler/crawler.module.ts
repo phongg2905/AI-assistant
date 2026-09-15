@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
+import { ProductsModule } from '../products/products.module.js';
+import { CellphonesCrawler } from './crawlers/cellphones.crawler.js';
+import { GearvnCrawler } from './crawlers/gearvn.crawler.js';
+import { PhongvuCrawler } from './crawlers/phongvu.crawler.js';
 import { CrawlerService } from './crawler.service.js';
 import { CrawlerController } from './crawler.controller.js';
-import { ProductsModule } from '../products/products.module.js';
-import { PipelineModule } from '../pipeline/pipeline.module.js';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ProductsModule, PipelineModule],
+  imports: [ProductsModule],
   controllers: [CrawlerController],
-  providers: [CrawlerService],
+  providers: [CellphonesCrawler, GearvnCrawler, PhongvuCrawler, CrawlerService],
   exports: [CrawlerService],
 })
 export class CrawlerModule {}

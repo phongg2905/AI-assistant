@@ -1,7 +1,0 @@
-packages:
-  - "."
-allowBuilds:
-  ffmpeg-static: true
-  onnxruntime-node: true
-  protobufjs: true
-  sharp: true
